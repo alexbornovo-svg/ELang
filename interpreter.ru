@@ -22,10 +22,10 @@ _msg = "let x = 10.2; print x"
 parts = []
 tokens = []
 
-_msg.scan(/\w+|\S/).each do |c|     # Making an array from the msg.
-    parts << c
-end
+parts = _msg.scan(/\d+\.\d+|\w+|[=;]|\S/) # Array of things to be tokenized
 
+
+# Basically all the tokenization process (aka Lexer)
 parts.each_with_index do |c, index|
   if KEYWORDS.key?(c.downcase)
     tokens << Token.new(KEYWORDS[c.downcase], c)
@@ -33,24 +33,15 @@ parts.each_with_index do |c, index|
     tokens << Token.new("ASSIGN", c)
   elsif c == ";"
     tokens << Token.new("SEMICOLON", c)
-  elsif c =~ /^\d+$/
-    if parts[index + 1] == "." || parts[index + 1] == ","
-        _decimal_number = ""
-        _decimal_number = _decimal_number + c
-        i = 0
-        while parts[index + i] != " " || parts[index + i] != ";"
-            _decimal_number = _decimal_number + parts[index + i]
-        end
-        tokens << Token.new("DECIMAL", _decimal_number)
-    else
-        tokens << Token.new("INT", c)
-    end
+  elsif c =~ /^\d+\.\d+$/                     # Decimal check
+    tokens << Token.new("DECIMAL", c)
+  elsif c =~ /^\d+$/                          # Integer check
+    tokens << Token.new("INT", c)
   elsif c =~ /^[a-zA-Z_]\w*$/
     tokens << Token.new("IDENTIFIER", c)
   else
     tokens << Token.new("UNKNOWN", c)
   end
-  puts c
 end
 
 puts tokens
