@@ -50,9 +50,18 @@ KEYWORDS = {
   ")" => "BRAKET_CLOSE_ROUND"
 }.freeze
 
-_msg = "let x = 10.2; print(x); if (x) { print(1) } else { print(0) }"
+EXITCODES = {
+  "No errors" => 0,
+  "Undefined reference" => 1,
+  "Bracket error" => 2
+}.freeze
+
+exitcode = 0
+
+_msg = "let x = 10.2; print(x); if (x) { print(1) } else { print(0) ciao }"
 parts = []
 tokens = []
+declared = []
 
 parts = _msg.scan(/\d+\.\d+|\w+|[{}()=;]|\S/)  # Array of things to be tokenized
 
@@ -64,91 +73,101 @@ parts.each_with_index do |c, index|
     tokens << Token.new("ASSIGN", c)
   elsif c == ";"
     tokens << Token.new("SEMICOLON", c)
-  elsif c =~ /^\d+\.\d+$/                     # Decimal check
+  elsif c =~ /^\d+\.\d+$/
     tokens << Token.new("DECIMAL", c)
-  elsif c =~ /^\d+$/                          # Integer check
+  elsif c =~ /^\d+$/
     tokens << Token.new("INT", c)
-  elsif c =~ /^[a-zA-Z_]\w*$/
+  elsif c =~ /^[a-zA-Z_]\w*$/ && index > 0 && parts[index - 1].downcase == "let"
     tokens << Token.new("IDENTIFIER", c)
+    declared << c
   else
-    tokens << Token.new("UNKNOWN", c)
+    if not declared.include?(c)
+      tokens << Token.new("UNKNOWN", c)
+    else 
+      tokens << Token.new("IDENTIFIER", c)
+    end
   end
 end
 
-puts "--- TOKENS ---"
-puts tokens
-
-# ast creation process (beacuse i want my own algorithm)
+# AST creation process (beacuse i want my own algorithm)
 ast = []
 
-tokens.each_with_index do |token, index|
-  new_part = []
-  if token.type == "KEYWORDS_LET"
-    new_part << index 
-    new_part << "ASSIGN" 
-    new_part << tokens[index + 1].value
-    new_part << tokens[index + 3].value
+if exitcode == 0
+  tokens.each_with_index do |token, index|
+    new_part = []
+    if token.type == "KEYWORDS_LET"
+      new_part << index 
+      new_part << "ASSIGN" 
+      new_part << tokens[index + 1].value
+      new_part << tokens[index + 3].value
+      
+    elsif token.type == "KEYWORDS_PRINT"
+      new_part << index
+      new_part << "PRINT"
+      new_part << tokens[index + 2].value
+
+    elsif token.type == "KEYWORDS_IF"
+      new_part << index
+      new_part << "IF_BLOCK"
+      new_part << tokens[index + 2].value
+
+    elsif token.type == "KEYWORDS_ELSE"
+      new_part << index
+      new_part << "ELSE_BLOCK"
+
+    elsif token.type == "BRAKET_OPEN_CURL"
+      new_part << index
+      new_part << "BRAKET_OPEN_CURL"
     
-  elsif token.type == "KEYWORDS_PRINT"
-    new_part << index
-    new_part << "PRINT"
-    new_part << tokens[index + 2].value
+    elsif token.type == "BRAKET_CLOSE_CURL"
+      new_part << index
+      new_part << "BRAKET_CLOSE_CURL"
+    
+    elsif token.type == "UNKNOWN"
+      puts "ERROR: Undefined reference to #{token}"
+      exitcode = EXITCODES["Undefined reference"]
+      break
 
-  elsif token.type == "KEYWORDS_IF"
-    new_part << index
-    new_part << "IF_BLOCK"
-    new_part << tokens[index + 2].value
-
-  elsif token.type == "KEYWORDS_ELSE"
-    new_part << index
-    new_part << "ELSE_BLOCK"
-
-  elsif token.type == "BRAKET_OPEN_CURL"
-    new_part << index
-    new_part << "BRAKET_OPEN_CURL"
-  
-  elsif token.type == "BRAKET_CLOSE_CURL"
-    new_part << index
-    new_part << "BRAKET_CLOSE_CURL"
-  
+    end
+    ast << new_part
   end
-  ast << new_part
 end
-
-puts "\n--- AST ---"
-p ast
 
 # Brackets and If-Else evaluation
 
 _indentation = 0
 _last_bracket = "BRAKET_CLOSE_CURL"
 
-ast.each_with_index do |branch, index|
-  if branch[1] == "BRAKET_OPEN_CURL"
-    if _last_bracket != branch[1]
-      _indentation = _indentation + 1
-      _last_bracket = "BRAKET_OPEN_CURL"
-    else 
-      puts "ERROR: Unexpected open bracket"
-      break
+if exitcode == 0
+  ast.each_with_index do |branch, index|
+    if branch[1] == "BRAKET_OPEN_CURL"
+      if _last_bracket != branch[1]
+        _indentation = _indentation + 1
+        _last_bracket = "BRAKET_OPEN_CURL"
+      else 
+        puts "ERROR: Unexpected open bracket"
+        break
+      end
+    elsif branch[1] == "BRAKET_CLOSE_CURL"
+      if _last_bracket != branch[1]
+        _indentation = _indentation - 1
+        _last_bracket = "BRAKET_CLOSE_CURL"
+      else 
+        puts "ERROR: Unexpected closed bracket"
+        break
+      end
     end
-  elsif branch[1] == "BRAKET_CLOSE_CURL"
-    if _last_bracket != branch[1]
-      _indentation = _indentation - 1
-      _last_bracket = "BRAKET_CLOSE_CURL"
-    else 
-      puts "ERROR: Unexpected closed bracket"
-      break
-    end
-  end
 
-  if _indentation < 0
-    puts "ERROR: Unexpected bracket"
+    if _indentation < 0
+      puts "ERROR: Unexpected bracket"
+      exitcode = EXITCODES["Bracket error"]
+      break
+    end
+    branch << _indentation
   end
-  branch << _indentation
 end
 
-puts "\n--- AST ---"
-p ast
+puts "Ended with code #{exitcode}"
+
 
 
