@@ -1,0 +1,13 @@
+let x = 10.2; 
+get(x);
+print(x); 
+
+print("Numeri numeri numeri");
+if (x) 
+{ 
+    print(1);
+} 
+else 
+{ 
+    print(0);
+}
