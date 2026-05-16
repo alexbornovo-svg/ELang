@@ -1,13 +1,77 @@
-let x = 10.2; 
-get(x);
-print(x); 
+/ Test 1: assegnazione e print /
+let x = 10;
+print(x);
 
-print("Numeri numeri numeri");
-if (0) 
-{ 
-    print(1);
-} 
-else 
-{ 
-    print(0);
+/ Test 2: riassegnazione /
+x = 20;
+print(x);
+
+/ Test 3: operazioni matematiche /
+let a = 3;
+let b = 4;
+let somma = a + b;
+let diff = b - a;
+let prod = a * b;
+let mod = b % a;
+print(somma);
+print(diff);
+print(prod);
+print(mod);
+
+/ Test 4: if con confronto /
+if (somma == 7)
+{
+    print("if ok");
+}
+else
+{
+    print("if FAIL");
+}
+
+/ Test 5: if ed else con falso /
+if (somma > 100)
+{
+    print("else FAIL");
+}
+else
+{
+    print("else ok");
+}
+
+/ Test 6: riassegnazione con operazione /
+let contatore = 0;
+contatore = contatore + 1;
+contatore = contatore + 1;
+contatore = contatore + 1;
+print(contatore);
+
+/ Test 7: loop /
+let i = 0;
+loop (4)
+{
+    i = i + 1;
+}
+print(i);
+
+/ Test 8: while /
+let n = 10;
+while (n > 0)
+{
+    n = n - 3;
+}
+print(n);
+
+/ Test 9: if dentro loop /
+let pari = 0;
+loop (6)
+{
+    pari = pari + 2;
+}
+if (pari == 12)
+{
+    print("loop + if ok");
+}
+else
+{
+    print("loop + if FAIL");
 }
